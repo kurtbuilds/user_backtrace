@@ -89,7 +89,7 @@ mod tests {
     use super::*;
 
     #[test]
-    fn it_works() {
+    fn test_anyhow_err() {
         let Err(e) = nested1() else { panic!("expected error"); };
         // println!("{:?}", decode_backtrace(e.backtrace()));
         // println!("backtrace: {}", e.backtrace());
