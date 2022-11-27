@@ -1,5 +1,4 @@
-use std::backtrace::Backtrace;
-use std::fmt::{Debug, Display, Formatter};
+use std::fmt::{Display, Formatter};
 use anyhow::{Result, anyhow};
 
 const HIDDEN_PACKAGES: &[&str] = &[
@@ -9,6 +8,9 @@ const HIDDEN_PACKAGES: &[&str] = &[
     "alloc",
     "std",
     "test",
+    "tokio",
+    "futures",
+    "futures_util",
 ];
 
 fn nested2() -> Result<()> {
@@ -46,8 +48,12 @@ fn decode_backtrace<Backtrace: Display>(b: &Backtrace, hide_packages: &[&str]) -
     let mut lines = s.lines();
     let mut frames = Vec::new();
 
-    while let (Some(line1), Some(line2)) = (lines.next(), lines.next()) {
+    while let Some(line1) = lines.next() {
         let frame = &line1[6..];
+        if frame.starts_with("__") {
+            continue
+        }
+        let line2 = lines.next().unwrap();
         if frame.starts_with('<') {
             let package1 = frame[1..].splitn(2, "::").next().unwrap();
             let package2 = frame.splitn(2, " as ").skip(1).next().unwrap().splitn(2, "::").next().unwrap();
