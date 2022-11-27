@@ -2,12 +2,11 @@
 name = "user-backtrace"
 version = "0.1.0"
 edition = "2021"
+license = "MIT"
+description = "A very small library for smaller backtraces that only contain user relevant information"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
 anyhow = { version = "1.0.66", features = ["backtrace"] }
 serde_json = "1.0.89"
-
-[dev-dependencies]
-anyhow = "1.0.66"
