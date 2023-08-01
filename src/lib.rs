@@ -1,5 +1,4 @@
 use std::fmt::{Display, Formatter};
-use anyhow::{Result, anyhow};
 
 const HIDDEN_PACKAGES: &[&str] = &[
     "backtrace",
@@ -13,45 +12,52 @@ const HIDDEN_PACKAGES: &[&str] = &[
     "futures_util",
 ];
 
-fn nested2() -> Result<()> {
-    Err(anyhow!("Not implemented"))
-}
 
-
-pub fn nested1() -> Result<()> {
-    nested2()
-}
-
-
-struct DecodedFrame {
+pub struct DecodedFrame {
     raw_line1: String,
     raw_line2: String,
 }
 
 /// Represents a best attempt at pulling out only user relevant information from a backtrace frame.
-pub struct DecodedUserBacktrace {
-    frames: Vec<DecodedFrame>,
+pub enum DecodedUserBacktrace {
+    Frames(Vec<DecodedFrame>),
+    Disabled,
 }
 
 impl Display for DecodedUserBacktrace {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        for frame in &self.frames {
-            writeln!(f, "{}", frame.raw_line1)?;
-            writeln!(f, "{}", frame.raw_line2)?;
+        match self {
+            DecodedUserBacktrace::Frames(frames) => {
+                for frame in frames {
+                    writeln!(f, "{}", frame.raw_line1)?;
+                    writeln!(f, "{}", frame.raw_line2)?;
+                }
+                Ok(())
+            }
+            DecodedUserBacktrace::Disabled => {
+                writeln!(f, "disabled backtrace")
+            }
         }
-        Ok(())
     }
 }
 
 fn decode_backtrace<Backtrace: Display>(b: &Backtrace, hide_packages: &[&str]) -> DecodedUserBacktrace {
-    let s = format!("{}", b);
-    let mut lines = s.lines();
+    let s = b.to_string();
+    let mut lines = s.lines().peekable();
     let mut frames = Vec::new();
-
+    if lines.next().unwrap_or_default() == "disabled backtrace" {
+        return DecodedUserBacktrace::Disabled;
+    }
+    loop {
+        if lines.peek().map(|&l| l.trim_start().starts_with("1")).unwrap_or_default() {
+            break;
+        }
+        lines.next();
+    }
     while let Some(line1) = lines.next() {
         let frame = &line1[6..];
         if frame.starts_with("__") {
-            continue
+            continue;
         }
         let line2 = lines.next().unwrap();
         if frame.starts_with('<') {
@@ -71,7 +77,7 @@ fn decode_backtrace<Backtrace: Display>(b: &Backtrace, hide_packages: &[&str]) -
             raw_line2: line2.to_string(),
         });
     }
-    DecodedUserBacktrace { frames }
+    DecodedUserBacktrace::Frames(frames)
 }
 
 pub trait UserBacktrace {
@@ -86,7 +92,16 @@ impl UserBacktrace for anyhow::Error {
 
 #[cfg(test)]
 mod tests {
+    use anyhow::{Result, anyhow};
     use super::*;
+
+    fn nested2() -> Result<()> {
+        Err(anyhow!("Not implemented"))
+    }
+
+    fn nested1() -> Result<()> {
+        nested2()
+    }
 
     #[test]
     fn test_anyhow_err() {
@@ -94,6 +109,7 @@ mod tests {
         // println!("{:?}", decode_backtrace(e.backtrace()));
         // println!("backtrace: {}", e.backtrace());
         let user_backtrace = format!("{}", e.user_backtrace());
+        println!("{}", user_backtrace);
         assert_eq!(user_backtrace.lines().count(), 8);
     }
 }
