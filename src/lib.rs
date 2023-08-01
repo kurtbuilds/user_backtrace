@@ -45,7 +45,7 @@ fn decode_backtrace<Backtrace: Display>(b: &Backtrace, hide_packages: &[&str]) -
     let s = b.to_string();
     let mut lines = s.lines().peekable();
     let mut frames = Vec::new();
-    if lines.next().unwrap_or_default() == "disabled backtrace" {
+    if lines.peek().map(|&s| s == "disabled backtrace").unwrap_or(true) {
         return DecodedUserBacktrace::Disabled;
     }
     loop {
