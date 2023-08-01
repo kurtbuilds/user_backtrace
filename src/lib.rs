@@ -48,6 +48,9 @@ fn decode_backtrace<Backtrace: Display>(b: &Backtrace, hide_packages: &[&str]) -
     if lines.peek().map(|&s| s == "disabled backtrace").unwrap_or(true) {
         return DecodedUserBacktrace::Disabled;
     }
+    for line in lines.clone() {
+        println!("{:?}", line);
+    }
     loop {
         if lines.peek().map(|&l| l.trim_start().starts_with("1")).unwrap_or_default() {
             break;
