@@ -1,4 +1,6 @@
-set dotenv-load := true
+set dotenv-load
+set positional-arguments
+set export
 
 help:
     @just --list --unsorted
@@ -7,5 +9,5 @@ build:
     cargo build
 alias b := build
 
-test:
-    cargo test -- --nocapture
+test *ARGS:
+    cargo test $ARGS -- --nocapture

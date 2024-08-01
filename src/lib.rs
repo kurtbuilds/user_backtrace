@@ -8,14 +8,15 @@ const HIDDEN_PACKAGES: &[&str] = &[
     "std",
     "test",
     "tokio",
+    "tracing",
     "futures",
     "futures_util",
 ];
 
 
 pub struct DecodedFrame {
-    raw_line1: String,
-    raw_line2: String,
+    frame: String,
+    location: Option<String>,
 }
 
 /// Represents a best attempt at pulling out only user relevant information from a backtrace frame.
@@ -29,8 +30,10 @@ impl Display for DecodedUserBacktrace {
         match self {
             DecodedUserBacktrace::Frames(frames) => {
                 for frame in frames {
-                    writeln!(f, "{}", frame.raw_line1)?;
-                    writeln!(f, "{}", frame.raw_line2)?;
+                    writeln!(f, "{}", frame.frame)?;
+                    if let Some(line2) = &frame.location {
+                        writeln!(f, "{}", line2)?;
+                    }
                 }
                 Ok(())
             }
@@ -48,21 +51,38 @@ fn decode_backtrace<Backtrace: Display>(b: &Backtrace, hide_packages: &[&str]) -
     if lines.peek().map(|&s| s == "disabled backtrace").unwrap_or(true) {
         return DecodedUserBacktrace::Disabled;
     }
-    for line in lines.clone() {
-        println!("{:?}", line);
-    }
+
     loop {
-        if lines.peek().map(|&l| l.trim_start().starts_with("1")).unwrap_or_default() {
+        let Some(&line) = lines.peek() else {
+            break;
+        };
+        let line = &line[3..];
+        if line.starts_with('1') {
             break;
         }
         lines.next();
     }
-    while let Some(line1) = lines.next() {
-        let frame = &line1[6..];
+
+    while let Some(frame) = lines.next() {
+        // skip the "  #: " portion
+        let frame = &frame[6..];
         if frame.starts_with("__") {
             continue;
         }
-        let line2 = lines.next().unwrap();
+        // get location, if its there
+        let mut location = None;
+        if let Some(&l) = lines.peek() {
+            let l = l.trim_start_matches(' ');
+            if l.starts_with("at ") {
+                location = Some(lines.next().unwrap().to_string());
+            }
+        }
+
+        if frame.starts_with("start_thread") || frame.starts_with("clone") {
+            continue;
+        }
+
+        // decode
         if frame.starts_with('<') {
             let package1 = frame[1..].splitn(2, "::").next().unwrap();
             let package2 = frame.splitn(2, " as ").skip(1).next().unwrap().splitn(2, "::").next().unwrap();
@@ -76,8 +96,8 @@ fn decode_backtrace<Backtrace: Display>(b: &Backtrace, hide_packages: &[&str]) -
             }
         };
         frames.push(DecodedFrame {
-            raw_line1: line1.to_string(),
-            raw_line2: line2.to_string(),
+            frame: frame.to_string(),
+            location,
         });
     }
     DecodedUserBacktrace::Frames(frames)
@@ -110,9 +130,18 @@ mod tests {
     fn test_anyhow_err() {
         let Err(e) = nested1() else { panic!("expected error"); };
         // println!("{:?}", decode_backtrace(e.backtrace()));
-        // println!("backtrace: {}", e.backtrace());
+        println!("backtrace: {}", e.backtrace());
         let user_backtrace = format!("{}", e.user_backtrace());
         println!("{}", user_backtrace);
         assert_eq!(user_backtrace.lines().count(), 8);
+    }
+
+    #[test]
+    fn test_parse_backtrace1() {
+        let s = include_str!("../data/backtrace1.txt");
+        let r = decode_backtrace(&s, HIDDEN_PACKAGES);
+        let r = r.to_string();
+        println!("{}", r);
+        assert_eq!(r.lines().count(), 3);
     }
 }

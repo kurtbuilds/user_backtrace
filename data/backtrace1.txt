@@ -1,0 +1,19 @@
+   1: server::integration::kehe::job::sync_table_deductions::{{closure}}
+   2: server::job::run::run_job_function::{{closure}}
+   3: <tracing::instrument::Instrumented<T> as core::future::future::Future>::poll
+   4: server::job::run::run_single_job_worker::{{closure}}
+   5: std::panicking::try
+   6: tokio::runtime::task::harness::Harness<T,S>::poll
+   7: tokio::runtime::scheduler::multi_thread::worker::Context::run_task
+   8: tokio::runtime::scheduler::multi_thread::worker::Context::run
+   9: tokio::runtime::context::set_scheduler
+  10: tokio::runtime::context::runtime::enter_runtime
+  11: tokio::runtime::scheduler::multi_thread::worker::run
+  12: tokio::runtime::task::core::Core<T,S>::poll
+  13: tokio::runtime::task::harness::Harness<T,S>::poll
+  14: tokio::runtime::blocking::pool::Inner::run
+  15: std::sys_common::backtrace::__rust_begin_short_backtrace
+  16: core::ops::function::FnOnce::call_once{{vtable.shim}}
+  17: std::sys::pal::unix::thread::Thread::new::thread_start
+  18: start_thread
+  19: clone
