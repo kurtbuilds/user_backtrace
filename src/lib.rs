@@ -1,18 +1,24 @@
 use std::fmt::{Display, Formatter};
 
 const HIDDEN_PACKAGES: &[&str] = &[
-    "backtrace",
-    "anyhow",
-    "core",
+    "F",
     "alloc",
+    "anyhow",
+    "axum",
+    "backtrace",
+    "core",
+    "futures",
+    "futures_core",
+    "futures_util",
+    "hyper",
+    "hyper_util",
     "std",
     "test",
     "tokio",
+    "tower",
+    "tower_service",
     "tracing",
-    "futures",
-    "futures_util",
 ];
-
 
 pub struct DecodedFrame {
     frame: String,
@@ -44,11 +50,18 @@ impl Display for DecodedUserBacktrace {
     }
 }
 
-fn decode_backtrace<Backtrace: Display>(b: &Backtrace, hide_packages: &[&str]) -> DecodedUserBacktrace {
+fn decode_backtrace<Backtrace: Display>(
+    b: &Backtrace,
+    hide_packages: &[&str],
+) -> DecodedUserBacktrace {
     let s = b.to_string();
     let mut lines = s.lines().peekable();
     let mut frames = Vec::new();
-    if lines.peek().map(|&s| s == "disabled backtrace").unwrap_or(true) {
+    if lines
+        .peek()
+        .map(|&s| s == "disabled backtrace")
+        .unwrap_or(true)
+    {
         return DecodedUserBacktrace::Disabled;
     }
 
@@ -84,13 +97,14 @@ fn decode_backtrace<Backtrace: Display>(b: &Backtrace, hide_packages: &[&str]) -
 
         // decode
         if frame.starts_with('<') {
-            let package1 = frame[1..].splitn(2, "::").next().unwrap();
-            let package2 = frame.splitn(2, " as ").skip(1).next().unwrap().splitn(2, "::").next().unwrap();
+            let (left, right) = frame[1..].split_once(" as ").unwrap();
+            let package1 = left.split(':').next().unwrap();
+            let package2 = right.split(':').next().unwrap();
             if hide_packages.contains(&package1) && hide_packages.contains(&package2) {
                 continue;
             }
         } else {
-            let package = frame.splitn(2, "::").next().unwrap();
+            let package = frame.split(':').next().unwrap();
             if hide_packages.contains(&package) {
                 continue;
             }
@@ -115,8 +129,8 @@ impl UserBacktrace for anyhow::Error {
 
 #[cfg(test)]
 mod tests {
-    use anyhow::{Result, anyhow};
     use super::*;
+    use anyhow::{anyhow, Result};
 
     fn nested2() -> Result<()> {
         Err(anyhow!("Not implemented"))
@@ -128,7 +142,9 @@ mod tests {
 
     #[test]
     fn test_anyhow_err() {
-        let Err(e) = nested1() else { panic!("expected error"); };
+        let Err(e) = nested1() else {
+            panic!("expected error");
+        };
         // println!("{:?}", decode_backtrace(e.backtrace()));
         println!("backtrace: {}", e.backtrace());
         let user_backtrace = format!("{}", e.user_backtrace());
