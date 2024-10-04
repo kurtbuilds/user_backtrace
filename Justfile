@@ -10,4 +10,4 @@ build:
 alias b := build
 
 test *ARGS:
-    cargo test $ARGS -- --nocapture
+    cargo test $ARGS

@@ -12,3 +12,6 @@ path = "src/lib.rs"
 
 [dependencies]
 anyhow = { version = "1.0.89", features = ["backtrace"] }
+
+[dev-dependencies]
+pretty_assertions = "1.4.1"

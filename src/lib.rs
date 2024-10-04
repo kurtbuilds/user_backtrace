@@ -79,7 +79,7 @@ fn decode_backtrace<Backtrace: Display>(
     while let Some(frame) = lines.next() {
         // skip the "  #: " portion
         let frame = &frame[6..];
-        if frame.starts_with("__") {
+        if frame.starts_with("__") || frame == "<unknown>" || frame == "clone" || frame == "start_thread" {
             continue;
         }
         // get location, if its there
@@ -89,10 +89,6 @@ fn decode_backtrace<Backtrace: Display>(
             if l.starts_with("at ") {
                 location = Some(lines.next().unwrap().to_string());
             }
-        }
-
-        if frame.starts_with("start_thread") || frame.starts_with("clone") {
-            continue;
         }
 
         // decode
@@ -131,6 +127,7 @@ impl UserBacktrace for anyhow::Error {
 mod tests {
     use super::*;
     use anyhow::{anyhow, Result};
+    use pretty_assertions::assert_eq;
 
     fn nested2() -> Result<()> {
         Err(anyhow!("Not implemented"))
@@ -157,7 +154,14 @@ mod tests {
         let s = include_str!("../data/backtrace1.txt");
         let r = decode_backtrace(&s, HIDDEN_PACKAGES);
         let r = r.to_string();
-        println!("{}", r);
         assert_eq!(r.lines().count(), 3);
+    }
+
+    #[test]
+    fn test_backtrace2() {
+        let s = include_str!("../data/backtrace2.txt");
+        let r = decode_backtrace(&s, HIDDEN_PACKAGES);
+        let r = r.to_string();
+        assert_eq!(r, include_str!("../data/backtrace2.expect.txt"));
     }
 }

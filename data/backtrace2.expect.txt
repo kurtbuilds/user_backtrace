@@ -1,0 +1,16 @@
+db::query::deserialize_results::{{closure}}
+             at ./Users/kurt/promoted/db/src/query.rs:123:21
+db::query::run_query::{{closure}}
+             at ./Users/kurt/promoted/db/src/query.rs:117:38
+server::integration::handler::deduction_query::{{closure}}
+             at ./Users/kurt/promoted/server/src/integration/handler.rs:371:6
+server::middleware::request_info::attach_response_info::{{closure}}
+             at ./Users/kurt/promoted/server/src/middleware/request_info.rs:108:33
+server::middleware::authenticated_user::authenticate_request::{{closure}}
+             at ./Users/kurt/promoted/server/src/middleware/authenticated_user.rs:74:19
+<tower_cookies::service::future::ResponseFuture<F> as core::future::future::Future>::poll
+             at ./Users/kurt/.cargo/registry/src/index.crates.io-6f17d22bba15001f/tower-cookies-0.10.0/src/service/future.rs:31:30
+<tower_http::trace::future::ResponseFuture<Fut,C,OnResponseT,OnBodyChunkT,OnEosT,OnFailureT> as core::future::future::Future>::poll
+             at ./Users/kurt/.cargo/registry/src/index.crates.io-6f17d22bba15001f/tower-http-0.6.1/src/trace/future.rs:55:29
+server::middleware::request_info::request_id::{{closure}}
+             at ./Users/kurt/promoted/server/src/middleware/request_info.rs:87:19
